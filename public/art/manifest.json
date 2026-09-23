@@ -1,0 +1,27 @@
+{
+  "bundles": [
+    {
+      "name": "moon-grove",
+      "assets": [
+        {
+          "alias": "landscape",
+          "src": "./art/background-v2.png"
+        },
+        {
+          "alias": "sceneAtlas",
+          "src": "./art/scene-atlas-v2.png"
+        },
+        {
+          "alias": "traveler",
+          "src": "./art/traveler-v2.png"
+        },
+        {
+          "alias": "effectsAtlas",
+          "src": "./art/effects-atlas.png"
+        }
+      ]
+    }
+  ],
+  "artStatus": "AI-generated prototype textures; replace with production art using the same aliases and update frames.json. Landscape temporarily combines sky, moon and distant mountains.",
+  "version": 2
+}

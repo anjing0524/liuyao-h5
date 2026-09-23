@@ -52,17 +52,22 @@ fn flip<R: Rng + ?Sized>(rng: &mut R) -> bool {
 
 /// 摇一次三铜钱，得到一爻
 pub fn roll_line<R: Rng + ?Sized>(rng: &mut R) -> Line {
-    let backs = [flip(rng), flip(rng), flip(rng)]
-        .iter()
-        .filter(|&&b| b)
-        .count() as i8;
-    match backs {
-        0 => Line { yang: false, changing: true,  kind: -1 }, // 老阴
-        1 => Line { yang: true,  changing: false, kind:  0 }, // 少阳
-        2 => Line { yang: false, changing: false, kind:  0 }, // 少阴
-        3 => Line { yang: true,  changing: true,  kind:  1 }, // 老阳
+    roll_line_with_faces(rng).0
+}
+
+/// Return the exact three random faces used by the Rust calculation.
+/// true is the yang face (the visual golden front), false the yin face.
+pub fn roll_line_with_faces<R: Rng + ?Sized>(rng: &mut R) -> (Line, [bool; 3]) {
+    let faces = [flip(rng), flip(rng), flip(rng)];
+    let backs = faces.iter().filter(|&&b| b).count();
+    let line = match backs {
+        0 => Line { yang: false, changing: true, kind: -1 },
+        1 => Line { yang: true, changing: false, kind: 0 },
+        2 => Line { yang: false, changing: false, kind: 0 },
+        3 => Line { yang: true, changing: true, kind: 1 },
         _ => unreachable!(),
-    }
+    };
+    (line, faces)
 }
 
 /// 起一卦（自下而上 6 爻）
@@ -141,6 +146,22 @@ mod tests {
             } else {
                 assert_eq!(lines[i].yang, changed[i].yang);
             }
+        }
+    }
+}
+#[cfg(test)]
+mod face_contract_tests {
+    use super::*;
+    use rand::{rngs::StdRng, SeedableRng};
+    #[test]
+    fn exported_faces_match_the_line_for_every_sample() {
+        let mut rng = StdRng::seed_from_u64(42);
+        for _ in 0..2000 {
+            let (line, faces) = roll_line_with_faces(&mut rng);
+            let count = faces.iter().filter(|&&f| f).count();
+            assert_eq!(line.yang, count % 2 == 1);
+            assert_eq!(line.changing, count == 0 || count == 3);
+            assert_eq!(line.kind, if count == 0 { -1 } else if count == 3 { 1 } else { 0 });
         }
     }
 }

@@ -1,0 +1,65 @@
+{
+  "tree": {
+    "source": "sceneAtlas",
+    "frame": [
+      0,
+      20,
+      1100,
+      990
+    ]
+  },
+  "traveler": {
+    "source": "traveler",
+    "frame": [
+      0,
+      20,
+      930,
+      1480
+    ]
+  },
+  "altar": {
+    "source": "sceneAtlas",
+    "frame": [
+      1110,
+      635,
+      415,
+      345
+    ]
+  },
+  "leafFront": {
+    "source": "effectsAtlas",
+    "frame": [
+      20,
+      55,
+      600,
+      535
+    ]
+  },
+  "leafBack": {
+    "source": "effectsAtlas",
+    "frame": [
+      665,
+      60,
+      570,
+      535
+    ]
+  },
+  "mist": {
+    "source": "effectsAtlas",
+    "frame": [
+      0,
+      765,
+      755,
+      420
+    ]
+  },
+  "grass": {
+    "source": "effectsAtlas",
+    "frame": [
+      760,
+      630,
+      490,
+      590
+    ]
+  }
+}

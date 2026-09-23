@@ -1,0 +1,510 @@
+/* One shared 9:16 shell for every route. Long documents scroll inside it. */
+:root {
+  --app-width: min(100vw, 56.25svh, 480px);
+  --moon-gold: #d8c38b;
+}
+body {
+  height: 100svh;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  background: radial-gradient(
+    ellipse at 50% 40%,
+    #263b34 0,
+    #0b1c1b 48%,
+    #050f11 100%
+  );
+}
+.app-shell {
+  width: var(--app-width);
+  height: calc(var(--app-width) * 16 / 9);
+  position: relative;
+  isolation: isolate;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  background: #102923;
+  box-shadow:
+    0 28px 110px #0009,
+    0 0 0 1px #acb49128;
+}
+.site-header {
+  position: relative;
+  z-index: 2;
+  flex: none;
+  width: 100%;
+  max-width: none;
+  margin: 0;
+  padding: 20px 25px;
+  background: linear-gradient(#0a211cc9, #0a211c55);
+  border-color: #d2c89526;
+}
+.brand {
+  font-size: 16px;
+}
+.brand span {
+  font-size: 7px;
+  letter-spacing: 0.25em;
+}
+nav {
+  gap: 20px;
+  font-size: 12px;
+}
+.app-shell main {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: #bca77044 transparent;
+  overscroll-behavior: contain;
+}
+.app-shell main > section {
+  min-height: 100%;
+  width: 100%;
+  animation: page-arrive 0.65s ease both;
+}
+body[data-page="cast"] .site-header {
+  display: none;
+}
+body[data-page="cast"] main {
+  overflow: hidden;
+}
+body[data-page="cast"] .ambient-scene {
+  visibility: hidden;
+}
+body[data-page="cast"] .ambient-scene * {
+  animation-play-state: paused;
+}
+.experience {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  background: none;
+}
+.stage {
+  width: 100%;
+  height: 100%;
+  max-width: none;
+  aspect-ratio: 9/16;
+  box-shadow: none;
+}
+#page-cast {
+  height: 100%;
+}
+.page-wrap {
+  max-width: none;
+  padding: 30px 27px 36px;
+}
+.page-wrap h1 {
+  font-size: 29px;
+}
+.heading-row {
+  gap: 10px;
+}
+#page-home {
+  min-height: 100%;
+  max-width: none;
+  display: flex;
+  flex-direction: column;
+}
+#page-home[hidden] {
+  display: none;
+}
+.home-art {
+  display: none;
+}
+.home-copy {
+  padding: 110px 30px 35px;
+  max-width: none;
+  flex: 1;
+}
+.home-copy h1 {
+  font-size: 35px;
+  line-height: 1.6;
+  text-shadow: 0 3px 24px #001711;
+}
+.home-copy .primary {
+  max-width: none;
+}
+.home-bottom {
+  padding: 20px 30px;
+  font-size: 10px;
+}
+.home-bottom span {
+  display: none;
+}
+.primary {
+  background: linear-gradient(115deg, #d0b56c2b, #a5985710, #d0b56c22);
+  box-shadow:
+    inset 0 0 20px #d9c17d08,
+    0 6px 25px #0619142b;
+  border-color: #c7af788c;
+  transition:
+    background 0.3s,
+    box-shadow 0.3s,
+    transform 0.3s;
+}
+.primary:hover {
+  background: #c5af7633;
+  box-shadow: 0 0 25px #c5af761c;
+}
+.primary:active {
+  transform: translateY(1px);
+}
+textarea {
+  background: linear-gradient(135deg, #0a251cdc, #12372cc7);
+  border-color: #b8b8894d;
+  box-shadow: inset 0 2px 20px #00120d33;
+  min-height: 140px;
+  backdrop-filter: blur(12px);
+  transition:
+    border-color 0.3s,
+    box-shadow 0.3s;
+}
+textarea:focus {
+  border-color: #d5c080a8;
+  box-shadow: 0 0 30px #c7b67614;
+}
+.categories span {
+  background: #102d2373;
+  backdrop-filter: blur(8px);
+}
+.categories input:checked + span {
+  background: #bdaa6530;
+  border-color: #c5b779a8;
+}
+.quiet-note {
+  margin-top: 28px;
+}
+.question-quote {
+  background: linear-gradient(90deg, #0b251722, transparent);
+}
+.reading,
+.installation {
+  background: linear-gradient(90deg, #09251b75, #0a241a22);
+}
+.changed-feature {
+  background: #133a2cad;
+  backdrop-filter: blur(10px);
+}
+.history-item {
+  background: linear-gradient(90deg, #0a291e66, transparent);
+}
+/* All motion is decorative, behind content, and uses transforms / opacity. */
+.ambient-scene {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  overflow: hidden;
+}
+.ambient-landscape {
+  position: absolute;
+  inset: -3%;
+  background: url("/art/background-v2.png") center 46% / cover;
+  opacity: 0.43;
+  filter: saturate(0.62);
+  transform: scale(1.03);
+}
+.ambient-veil {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    #10292026 0%,
+    #0a2c20a6 32%,
+    #08291ce8 75%,
+    #071f18f5 100%
+  );
+}
+.ambient-haze {
+  position: absolute;
+  width: 160%;
+  height: 42%;
+  left: -30%;
+  filter: blur(32px);
+  opacity: 0.22;
+  mix-blend-mode: screen;
+  background: radial-gradient(ellipse, #adc7a933, transparent 67%);
+  animation: mist-drift 24s ease-in-out infinite alternate;
+}
+.haze-one {
+  top: 12%;
+}
+.haze-two {
+  top: 57%;
+  animation-delay: -13s;
+  animation-duration: 32s;
+  opacity: 0.15;
+}
+.celestial-seal {
+  position: absolute;
+  width: 330px;
+  height: 330px;
+  left: 50%;
+  top: 9%;
+  transform: translateX(-50%);
+  opacity: 0.37;
+  transition:
+    opacity 0.8s,
+    top 1.2s,
+    transform 1.2s;
+}
+.celestial-seal svg {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  stroke: #d9c88b;
+  stroke-width: 0.65;
+  filter: drop-shadow(0 0 7px #d7bf6933);
+}
+.seal-outer {
+  animation: seal-turn 160s linear infinite;
+  transform-origin: center;
+  stroke-width: 0.45;
+}
+.seal-trigrams {
+  animation: seal-turn 100s linear infinite reverse;
+  transform-origin: center;
+  stroke-linecap: square;
+  stroke-width: 2;
+}
+.seal-trigrams circle {
+  stroke-width: 0.5;
+}
+.seal-core {
+  animation: seal-turn 48s linear infinite;
+  transform-origin: center;
+  stroke-width: 0.8;
+}
+.taiji-light {
+  fill: #d6c89033;
+}
+.taiji-dark {
+  fill: #193d30;
+}
+.taiji-eye {
+  fill: #d6c89099;
+}
+.seal-aura {
+  position: absolute;
+  inset: 16%;
+  border-radius: 50%;
+  background: radial-gradient(circle, #c5cf7520, transparent 69%);
+  filter: blur(14px);
+  animation: aura-breathe 7s ease-in-out infinite alternate;
+}
+.ambient-particles {
+  position: absolute;
+  inset: 0;
+}
+.ambient-particles i {
+  position: absolute;
+  left: var(--x);
+  top: var(--y);
+  width: var(--size);
+  height: var(--size);
+  border-radius: 50%;
+  background: #f0d99d;
+  box-shadow: 0 0 7px 2px #d6cb6944;
+  opacity: 0;
+  animation: mote-rise var(--duration) var(--delay) linear infinite;
+}
+.ambient-grain {
+  position: absolute;
+  inset: 0;
+  opacity: 0.08;
+  background-image: repeating-linear-gradient(
+    0deg,
+    transparent 0 3px,
+    #dae1ad12 3px 4px
+  );
+}
+body[data-page="inquire"] .celestial-seal {
+  top: 6%;
+  width: 235px;
+  height: 235px;
+  opacity: 0.6;
+}
+body[data-page="inquire"] .page-wrap {
+  padding-top: 164px;
+}
+body[data-page="inquire"] .page-wrap > .overline {
+  margin-top: 0;
+}
+body[data-page="inquire"] .page-wrap h1 {
+  margin: 8px 0;
+}
+body[data-page="inquire"] fieldset {
+  margin: 24px 0;
+}
+body[data-page="home"] .celestial-seal {
+  top: 6%;
+  left: 76%;
+  opacity: 0.4;
+}
+body[data-page="result"] .celestial-seal {
+  top: 16%;
+  width: 365px;
+  height: 365px;
+  opacity: 0.15;
+}
+body[data-page="history"] .celestial-seal,
+body[data-page="leaderboard"] .celestial-seal {
+  top: 23%;
+  left: 84%;
+  opacity: 0.23;
+}
+.app-shell:has(textarea:focus) .celestial-seal {
+  opacity: 0.27;
+}
+.ambient-paused .ambient-scene * {
+  animation-play-state: paused !important;
+}
+@keyframes seal-turn {
+  to {
+    transform: rotate(360deg);
+  }
+}
+@keyframes aura-breathe {
+  to {
+    opacity: 0.35;
+    transform: scale(1.16);
+  }
+}
+@keyframes mist-drift {
+  from {
+    transform: translateX(-7%) rotate(-5deg);
+  }
+  to {
+    transform: translateX(9%) rotate(4deg);
+  }
+}
+@keyframes mote-rise {
+  0% {
+    transform: translate3d(0, 25px, 0);
+    opacity: 0;
+  }
+  18% {
+    opacity: 0.65;
+  }
+  70% {
+    opacity: 0.32;
+  }
+  100% {
+    transform: translate3d(calc(var(--drift) * 28px), -120px, 0);
+    opacity: 0;
+  }
+}
+@keyframes page-arrive {
+  from {
+    opacity: 0;
+    transform: translateY(7px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+@media (max-width: 350px) {
+  .site-header {
+    padding: 16px 19px;
+  }
+  nav {
+    gap: 15px;
+  }
+  .page-wrap {
+    padding-inline: 21px;
+  }
+  .home-copy {
+    padding: 75px 23px 25px;
+  }
+  .home-copy h1 {
+    font-size: 29px;
+  }
+  .page-wrap h1 {
+    font-size: 25px;
+  }
+  body[data-page="inquire"] .page-wrap {
+    padding-top: 142px;
+  }
+  body[data-page="inquire"] .celestial-seal {
+    width: 205px;
+    height: 205px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .ambient-scene *,
+  .app-shell main > section {
+    animation: none !important;
+    transition: none !important;
+  }
+  .ambient-particles i:nth-child(3n) {
+    opacity: 0.3;
+  }
+}
+/* SVG rotation pivots follow each group's geometric bounds. */
+.seal-outer,
+.seal-trigrams,
+.seal-core {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+body[data-page="inquire"] .celestial-seal {
+  width: 210px;
+  height: 210px;
+  top: 5%;
+  filter: drop-shadow(0 0 14px #daca7933);
+}
+body[data-page="inquire"] .page-wrap {
+  padding-top: 118px;
+}
+.categories {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 6px;
+}
+.categories span {
+  padding: 7px 0;
+  text-align: center;
+  font-size: 12px;
+}
+body[data-page="inquire"] .ambient-landscape {
+  opacity: 0.3;
+}
+.app-shell main {
+  scrollbar-width: none;
+}
+.app-shell main::-webkit-scrollbar {
+  display: none;
+}
+@media (max-width: 350px) {
+  body[data-page="inquire"] .page-wrap {
+    padding-top: 104px;
+  }
+  body[data-page="inquire"] .celestial-seal {
+    width: 185px;
+    height: 185px;
+  }
+  .categories span {
+    font-size: 11px;
+  }
+}
+/* Reserve the upper sky for the moon; keep every orbit below its silhouette.
+   Relative sizing preserves the separation on narrow and desktop frames. */
+body[data-page] .celestial-seal {
+  top: 42%;
+  left: 80%;
+  width: 76%;
+  height: auto;
+  aspect-ratio: 1;
+}
+body[data-page="home"] .celestial-seal {top:48%;opacity:.36;}
+body[data-page="inquire"] .celestial-seal {top:38%;opacity:.29;}
+body[data-page="result"] .celestial-seal {top:35%;left:66%;opacity:.13;}
+body[data-page="history"] .celestial-seal,
+body[data-page="leaderboard"] .celestial-seal {opacity:.19;}

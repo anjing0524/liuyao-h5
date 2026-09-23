@@ -172,8 +172,17 @@ pub fn roll_one_line() -> JsValue {
     use rand::SeedableRng;
     use rand::rngs::StdRng;
     let mut rng = StdRng::from_entropy();
-    let l = coin::roll_line(&mut rng);
-    serde_wasm_bindgen::to_value(&l).unwrap()
+    let (line, faces) = coin::roll_line_with_faces(&mut rng);
+    serde_wasm_bindgen::to_value(&RolledLine { yang: line.yang, changing: line.changing, kind: line.kind, faces }).unwrap()
+}
+
+/// Backward-compatible line fields plus exact coin/leaf faces.
+#[derive(Serialize)]
+struct RolledLine {
+    yang: bool,
+    changing: bool,
+    kind: i8,
+    faces: [bool; 3],
 }
 
 /// 仅装卦（不重新起卦）。

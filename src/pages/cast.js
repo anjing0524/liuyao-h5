@@ -1,209 +1,168 @@
-/**
- * src/pages/cast.js — 月下问树（docs/03 交互流程）
- *
- * 全屏沉浸式摇卦：场景铺满视口，UI 仅保留
- *   左上爻数 / 右上声音 / 底部问卦，
- * 六爻直接显现在石台上（scene.setLines）。
- */
-import { rollOneLine, installOnly } from '../utils/wasm-loader.js';
-import { get, set as setStorage, KEY_CURRENT_QUESTION } from '../utils/storage.js';
-import { createTreeStage } from '../divination/tree-stage.js';
-import { AudioSystem } from '../divination/AudioSystem.js';
-
-const state = {
-  linesYang: [],
-  lineKinds: [],
-  animating: false,
-  castAtMs: Date.now(),
-  question: null,
-  stage: null,
-  sound: true,
-  audio: new AudioSystem(),
-};
-
-const YAO_NAMES = ['初', '二', '三', '四', '五', '上'];
-
-/** 由 wasm 摇出的爻推导三片卦叶的正/背（正=阳面、背=阴面）
- *  规则：一正少阳、两正少阴、三正老阳、三背老阴 */
-function facesFromLine(lineResult) {
-  const kind = Number(lineResult.kind);
-  const frontCount =
-    kind === 1 ? 3 :        // 老阳：三正
-    kind === -1 ? 0 :       // 老阴：三背
-    (lineResult.yang ? 1 : 2);  // 少阳 1 正 / 少阴 2 正
-  const faces = Array.from({ length: 3 }, (_, i) => i < frontCount ? 'front' : 'back');
-  for (let i = faces.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [faces[i], faces[j]] = [faces[j], faces[i]];
-  }
-  return faces;
-}
-
-export async function mountCast() {
-  const page = document.getElementById('page-cast');
-  const $progress = page.querySelector('#cast-progress');
-  const $questionCard = page.querySelector('#cast-question-card');
-  const $questionText = page.querySelector('#cast-question-text');
-  const $questionCat = page.querySelector('#cast-question-cat');
-  const $canvas = page.querySelector('#coin-canvas');
-  const $rollBtn = page.querySelector('#cast-roll-btn');
-  const $sound = page.querySelector('#cast-sound');
-  const $verdict = page.querySelector('#cast-verdict');
-  const $verdictName = page.querySelector('#cast-verdict-name');
-  const $verdictSub = page.querySelector('#cast-verdict-sub');
-
-  const stored = get(KEY_CURRENT_QUESTION);
-  if (stored && stored.question) {
-    state.question = stored;
-    $questionText.textContent = stored.question;
-    if (stored.category) {
-      $questionCat.textContent = '· ' + stored.category;
-      $questionCat.hidden = false;
-    }
-    $questionCard.hidden = false;
-  } else {
-    location.hash = '/';
+import { MoonScene } from "../moon/MoonScene.js";
+import { AudioSystem } from "../divination/AudioSystem.js";
+import { ensureReady, rollOneLine, installOnly } from "../utils/wasm-loader.js";
+import { get, set, KEY_CURRENT_QUESTION, KEY_LAST } from "../utils/storage.js";
+import { renderLines, lineName, positions } from "../utils/view.js";
+export async function mountCast({ signal }) {
+  const question = get(KEY_CURRENT_QUESTION);
+  if (!question?.question) {
+    location.hash = "inquire";
     return;
   }
-
-  state.linesYang = [];
-  state.lineKinds = [];
-  state.animating = false;
-  state.castAtMs = Date.now();
-
-  state.stage = await createTreeStage($canvas);
-  state.stage.scene.setLines([], [], -1);
-  state.stage.scene.onLeafLand = (i) => state.audio.leafLand(i);
-  window.__castStage = state.stage;
-  window.__castAudio = state.audio;
-  window.__treeReady = true;
-
-  // 浏览器要求用户手势后才能出声
-  const ensureAudio = () => { state.audio.init().catch(() => {}); };
-  const onVisibility = () => {
-    if (document.hidden) state.audio.suspend();
-    else state.audio.resume();
+  const page = document.getElementById("page-cast");
+  page.innerHTML = `<div class="experience"><div class="stage"><div class="canvas-host"></div><div class="scene-shade"></div><header class="masthead"><a class="wordmark" href="#inquire">‹ 返回问事</a><button class="sound-toggle" aria-pressed="false">声音 · 关</button></header><div class="title-group"><h1>月下问卦</h1><p class="intro">心有所问 · 静候叶落</p></div><aside class="hexagram"><div class="hex-heading">此刻成爻 <small id="cast-count">0 / 6</small></div><div id="cast-lines"></div><div class="hex-foot">自下而上 · 六次成卦</div></aside><footer class="ritual-control"><p class="phase-message" aria-live="polite">静候月色</p><p class="latest-line">一念起，万物有应</p><button class="ask-button" disabled>载入中</button><div class="progress-dots"></div><div class="footnote">三叶一爻 · 六爻一卦</div></footer><div class="loading-screen"><div class="loading-moon">◯</div><h2>月下问卦</h2><p>正在铺开月色…</p></div><div class="error-message" hidden role="alert"></div></div></div>`;
+  const $ = (s) => page.querySelector(s),
+    audio = new AudioSystem();
+  audio.setMuted(true);
+  let disposed = false,
+    ready = false,
+    lastCount = 0;
+  const castAtMs = Date.now(),
+    id = globalThis.crypto?.randomUUID?.() ?? `${castAtMs}-${performance.now()}`;
+  const messages = {
+    loading: "静候月色",
+    ready: "心有所问，轻叩此间",
+    drawing: "静候一念",
+    wind: "风起远山",
+    falling: "三叶问天地",
+    settling: "叶落，声息渐止",
+    inscribing: "一爻入卦",
+    revealing: "六爻已成，万籁归静",
+    complete: "卦成",
+    installing: "正在展开卦象",
+    "result-error": "卦象已保留，请重试",
+    error: "月色暂未铺开",
   };
-  page.addEventListener('pointerdown', ensureAudio, { once: true });
-  document.addEventListener('visibilitychange', onVisibility);
-
-  function render() {
-    const n = state.linesYang.length;
-    if (n === 0) $progress.textContent = '初爻未起';
-    else if (n >= 6) $progress.textContent = '六爻已满';
-    else $progress.textContent = `${YAO_NAMES[n - 1]}爻已定 · 问${YAO_NAMES[n]}爻`;
-
-    if (n >= 6) {
-      $rollBtn.textContent = '六爻已满';
-      $rollBtn.classList.add('disabled');
-    } else {
-      $rollBtn.textContent = state.animating ? '叶落中…' : '问 卦';
-      $rollBtn.classList.remove('disabled');
-    }
+  const scene = new MoonScene($(".canvas-host"), {
+    state(phase, lines) {
+      if (disposed || phase === "disposed") return;
+      $(".loading-screen").hidden = phase !== "loading";
+      $("#cast-lines").innerHTML = renderLines(lines, true);
+      $("#cast-count").textContent = `${lines.length} / 6`;
+      $(".phase-message").textContent = messages[phase] || "";
+      $(".latest-line").textContent = lines.length
+        ? `${positions[lines.length - 1]}爻 · ${lineName(lines.at(-1))}${lines.at(-1).changing ? " · 动爻" : ""}`
+        : "一念起，万物有应";
+      $(".progress-dots").innerHTML = Array.from(
+        { length: 6 },
+        (_, i) => `<i class="${i < lines.length ? "lit" : ""}"></i>`,
+      ).join("");
+      $(".ask-button").disabled = !(
+        (phase === "ready" && ready) ||
+        phase === "result-error"
+      );
+      $(".ask-button").textContent =
+        phase === "result-error"
+          ? "重试查看卦象"
+          : phase === "ready"
+            ? `问${positions[lines.length]}爻`
+            : "静候叶落";
+      if (lines.length > lastCount) {
+        audio.stoneResonate();
+        lastCount = lines.length;
+      }
+      if (phase === "complete") queueMicrotask(finish);
+    },
+    progress() {},
+    error(message) {
+      showError(message, true);
+    },
+    leafLand(i) {
+      audio.leafLand(i);
+    },
+  });
+  function showError(message, reload = false) {
+    $(".error-message").hidden = false;
+    $(".error-message").textContent =
+      `${message}${reload ? "，请刷新页面重试。" : ""}`;
+    $(".loading-screen").hidden = true;
   }
-
-  async function rollOne() {
-    if (state.animating || state.linesYang.length >= 6) return;
-
-    state.animating = true;
-    render();
-
-    let lineResult;
+  async function finish() {
+    if (disposed) return;
+    scene.machine.transition("installing");
+    const lines = scene.machine.lines;
+    const last = {
+      id,
+      question,
+      castAtMs,
+      linesYang: lines.map((l) => l.yang),
+      lineKinds: lines.map((l) => l.kind),
+      faces: lines.map((l) => l.faces),
+    };
+    set(KEY_LAST, last);
     try {
-      lineResult = await rollOneLine();
-    } catch (e) {
-      console.error('[cast] wasm 失败：', e);
-      alert('wasm 模块加载失败，请检查网络或刷新重试');
-      state.animating = false;
-      render();
-      return;
+      await installOnly(last.linesYang, last.lineKinds, castAtMs);
+      if (!disposed) location.hash = "result";
+    } catch {
+      if (!disposed) {
+        scene.machine.transition("result-error");
+        showError("装卦暂时失败，六爻已保留，可点击下方重试。");
+      }
     }
-
-    const faces = facesFromLine(lineResult);
-    state.audio.windSwell(1);
-    await state.stage.roll(faces);
-
-    state.linesYang.push(!!lineResult.yang);
-    state.lineKinds.push(Number(lineResult.kind));
-    state.stage.scene.setLines(state.linesYang, state.lineKinds, state.linesYang.length - 1);
-    state.audio.stoneResonate();
-    state.stage.setProgress(state.linesYang.length);
-
-    state.animating = false;
-    render();
-
-    if (state.linesYang.length === 6) {
-      // 成卦：风停/月出/镜头轻推 → 卦名浮现 → 再进入结果页
-      let hex = null;
-      try { hex = await installOnly(state.linesYang, state.lineKinds, state.castAtMs); }
-      catch (e) { console.warn('[cast] 装卦失败：', e); }
-
-      page.classList.add('revealing');
-      setTimeout(() => {
-        if (hex && hex.hex_name) {
-          $verdictName.textContent = hex.hex_name;
-          $verdictSub.textContent = hex.changed_hex_name ? `变卦 · ${hex.changed_hex_name}` : '';
-          $verdict.classList.add('show');
+  }
+  const owned = new AbortController();
+  $(".ask-button").addEventListener(
+    "click",
+    async () => {
+      if (scene.machine.phase === "result-error") {
+        $(".error-message").hidden = true;
+        return finish();
+      }
+      if (scene.machine.phase !== "ready" || !ready) return;
+      scene.machine.transition("drawing");
+      $(".error-message").hidden = true;
+      try {
+        const line = await rollOneLine();
+        if (disposed) return;
+        audio.windSwell();
+        scene.ask(line);
+      } catch {
+        if (!disposed) {
+          scene.machine.transition("ready");
+          showError("本次未能起爻，请重试。");
         }
-      }, 2200);
-
-      setTimeout(() => {
-        setStorage('liuyao.lastCast', {
-          linesYang: state.linesYang,
-          lineKinds: state.lineKinds,
-          castAtMs: state.castAtMs,
-          question: state.question,
-          ts: Date.now(),
-        });
-        location.hash = '#result';
-      }, 4800);
+      }
+    },
+    { signal: owned.signal },
+  );
+  $(".sound-toggle").addEventListener(
+    "click",
+    async () => {
+      const enable = audio.muted;
+      await audio.init();
+      if (disposed) return;
+      audio.setMuted(!enable);
+      $(".sound-toggle").textContent = `声音 · ${enable ? "开" : "关"}`;
+      $(".sound-toggle").setAttribute("aria-pressed", String(enable));
+    },
+    { signal: owned.signal },
+  );
+  document.addEventListener(
+    "visibilitychange",
+    () => (document.hidden ? audio.suspend() : !audio.muted && audio.resume()),
+    { signal: owned.signal },
+  );
+  function dispose() {
+    if (disposed) return;
+    disposed = true;
+    owned.abort();
+    scene.destroy();
+    audio.dispose();
+  }
+  signal.addEventListener("abort", dispose, { once: true });
+  try {
+    await ensureReady();
+    if (!disposed) await scene.init();
+    if (!disposed && scene.machine.phase === "ready") {
+      ready = true;
+      $(".ask-button").disabled = false;
+      $(".ask-button").textContent = "问初爻";
+    }
+  } catch {
+    if (!disposed) {
+      if (scene.machine.phase !== "error") scene.machine.transition("error");
+      showError("计算模块加载失败", true);
     }
   }
-
-  function onRoll() { rollOne(); }
-
-  function onReset() {
-    if (!confirm('确定要重起吗？当前六爻将清空。')) return;
-    state.linesYang = [];
-    state.lineKinds = [];
-    state.castAtMs = Date.now();
-    state.animating = false;
-    state.stage.scene.setLines([], [], -1);
-    state.stage.setProgress(0);
-    render();
-  }
-
-  function onSound() {
-    state.sound = !state.sound;
-    state.audio.init().catch(() => {});
-    state.audio.setMuted(!state.sound);
-    if ($sound) {
-      $sound.textContent = state.sound ? '♪' : '∅';
-      $sound.classList.toggle('muted', !state.sound);
-    }
-  }
-
-  function onClick(e) {
-    const a = e.target.closest('[data-action]')?.dataset.action;
-    if (a === 'castRoll') return onRoll();
-    if (a === 'castReset') return onReset();
-    if (a === 'castSound') return onSound();
-  }
-
-  page.addEventListener('click', onClick);
-
-  // 预热 wasm（不等结果，只确保模块就位）
-  rollOneLine().catch(() => {});
-
-  render();
-
-  return () => {
-    page.removeEventListener('click', onClick);
-    document.removeEventListener('visibilitychange', onVisibility);
-    state.audio.dispose();
-    if (state.stage) {
-      state.stage.destroy();
-      state.stage = null;
-    }
-  };
+  return dispose;
 }

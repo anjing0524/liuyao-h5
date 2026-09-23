@@ -7,7 +7,8 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview --port 4173",
-    "wasm:build": "cd liuyao-core-rs && wasm-pack build --target web --out-dir ../src/wasm --release"
+    "wasm:build": "cd liuyao-core-rs && wasm-pack build --target web --out-dir ../src/wasm --release",
+    "test": "node --test tests/*.test.mjs"
   },
   "devDependencies": {
     "sharp": "^0.35.4",
@@ -16,5 +17,8 @@
   "dependencies": {
     "gsap": "^3.15.0",
     "pixi.js": "^8.21.0"
+  },
+  "engines": {
+    "node": ">=22.12.0"
   }
 }

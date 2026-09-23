@@ -1,35 +1,27 @@
-/**
- * src/utils/storage.js — localStorage 包装
- *
- * 替代小程序的 wx.setStorageSync / wx.getStorageSync / wx.removeStorageSync。
- * 所有访问包在 try/catch 里（隐私模式或无痕浏览器可能抛错）。
- */
-
+const memory = new Map();
 export function get(key, fallback = null) {
+  if (memory.has(key)) return memory.get(key);
   try {
-    const raw = localStorage.getItem(key);
-    if (raw == null) return fallback;
-    return JSON.parse(raw);
-  } catch (e) {
+    return JSON.parse(localStorage.getItem(key)) ?? fallback;
+  } catch {
     return fallback;
   }
 }
-
 export function set(key, value) {
+  memory.set(key, value);
   try {
     localStorage.setItem(key, JSON.stringify(value));
     return true;
-  } catch (e) {
-    console.warn('[storage.set]', key, e);
+  } catch {
     return false;
   }
 }
-
 export function remove(key) {
-  try { localStorage.removeItem(key); } catch {}
+  memory.delete(key);
+  try {
+    localStorage.removeItem(key);
+  } catch {}
 }
-
-/** 当前起卦问题 */
-export const KEY_CURRENT_QUESTION = 'liuyao.currentQuestion';
-/** 历史记录数组 */
-export const KEY_CAST_HISTORY = 'liuyao.castHistory';
+export const KEY_CURRENT_QUESTION = "liuyao.currentQuestion";
+export const KEY_CAST_HISTORY = "liuyao.castHistory";
+export const KEY_LAST = "liuyao.lastCast";
