@@ -1,0 +1,180 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0a0a14">
+  <title>六爻起卦 · 玄穹</title>
+  <link rel="icon" href="data:,">
+  <link rel="stylesheet" href="/src/style.css?v=20260922f">
+</head>
+<body>
+  <!-- ===== 全局星空背景（PIXI） ===== -->
+  <canvas id="bg-canvas"></canvas>
+
+  <main id="app">
+
+    <!-- ========== 首页 ========== -->
+    <section id="page-index" class="page">
+      <div class="hero">
+        <div class="hero-glyph">☰</div>
+        <h1 class="title glow-text">六爻起卦</h1>
+        <div class="subtitle">一阴一阳之谓道</div>
+        <div class="subline muted">起卦前静心默念所问之事</div>
+      </div>
+
+      <div class="card glass">
+        <div class="label">壹</div>
+        <div class="muted">静心默念所问之事，脑中清晰即可开始。</div>
+      </div>
+
+      <div class="card glass">
+        <div class="label">贰</div>
+        <div class="muted">每次点「摇树」，树梢落下三片叶：金叶为阳、青叶为阴，依次成六爻。</div>
+      </div>
+
+      <div class="card glass">
+        <div class="label">叁</div>
+        <div class="muted">六爻落定后查阅卦象与变卦。</div>
+      </div>
+
+      <button class="btn-primary shine" data-action="goCast">开 始 起 卦</button>
+
+      <div class="row">
+        <button class="btn-secondary half" data-action="goHistory">历史记录</button>
+        <button class="btn-secondary half" data-action="goLeaderboard">热门卦象</button>
+      </div>
+    </section>
+
+    <!-- ========== 静心占问 ========== -->
+    <section id="page-inquire" class="page" hidden>
+      <h1 class="title glow-text">静心占问</h1>
+      <div class="subtitle">起卦之前，先把想问的事说清楚</div>
+
+      <div class="card glass">
+        <div class="label">占问词（必填）</div>
+        <textarea id="inquire-question" class="textarea"
+          placeholder="请具体写出想占问的事，越具体越清晰"
+          maxlength="500"></textarea>
+        <div class="muted">例如："下个月能否顺利入职新公司"</div>
+      </div>
+
+      <div class="card glass">
+        <div class="label">占问类别（选填）</div>
+        <div class="cat-row" id="inquire-cats"></div>
+      </div>
+
+      <div class="card glass">
+        <div class="label">不会写？参考：</div>
+        <div id="inquire-examples"></div>
+      </div>
+
+      <button class="btn-primary shine" data-action="inquireStart">开 始 摇 卦</button>
+      <button class="btn-secondary" data-action="inquireClear">清空</button>
+
+      <div class="muted hint">"心不诚不占，戏占不灵"——请把心里的杂念放下，认真默念所问之事。</div>
+    </section>
+
+    <!-- ========== 摇卦 · 月下问树（全屏沉浸场景） ========== -->
+    <section id="page-cast" class="page cast-page" hidden>
+      <div class="cast-stage">
+        <canvas id="coin-canvas" class="coin-canvas"></canvas>
+      </div>
+
+      <div class="cast-hud">
+        <div class="cast-top">
+          <div class="cast-progress" id="cast-progress">初爻未起</div>
+          <button class="cast-sound" id="cast-sound" data-action="castSound" aria-label="声音">♪</button>
+        </div>
+
+        <div class="cast-question" id="cast-question-card" hidden>
+          <span class="cast-question-label">所问</span>
+          <span class="cast-question-text" id="cast-question-text"></span>
+          <span class="cast-question-cat" id="cast-question-cat" hidden></span>
+        </div>
+
+        <div class="cast-verdict" id="cast-verdict">
+          <div class="cast-verdict-rule"></div>
+          <div class="cast-verdict-name" id="cast-verdict-name"></div>
+          <div class="cast-verdict-sub" id="cast-verdict-sub"></div>
+          <div class="cast-verdict-rule"></div>
+        </div>
+
+        <div class="cast-bottom">
+          <button class="cast-roll" id="cast-roll-btn" data-action="castRoll">问 卦</button>
+          <button class="cast-reset" data-action="castReset">重起</button>
+        </div>
+      </div>
+    </section>
+
+    <!-- ========== 结果 ========== -->
+    <section id="page-result" class="page" hidden>
+      <h1 class="title glow-text" id="result-hex-name"></h1>
+      <div class="subtitle" id="result-hex-subtitle"></div>
+
+      <!-- 吉凶速断（置顶） -->
+      <div class="q-inline" id="result-q-inline" hidden>所问：<span id="result-q-text"></span></div>
+      <div class="verdict-card glass" id="result-verdict-card" hidden>
+        <div class="verdict-badge" id="result-verdict-badge">平</div>
+        <div class="verdict-body">
+          <div class="verdict-title" id="result-verdict-title"></div>
+          <div class="verdict-summary" id="result-verdict-summary"></div>
+        </div>
+      </div>
+      <div class="verdict-reasons" id="result-verdict-reasons" hidden></div>
+
+      <div class="stage-wrap">
+        <canvas id="hex-canvas" class="hex-canvas"></canvas>
+      </div>
+
+      <div class="gz-inline" id="result-gz-inline"></div>
+
+      <details class="card glass details-box" id="result-installed-card" hidden>
+        <summary>装卦 · 纳甲</summary>
+        <div class="lines-table" id="result-lines-table"></div>
+        <div class="muted" id="result-gua-meta"></div>
+        <div class="changed-inline" id="result-changed-box" hidden>
+          <div class="label" id="result-changed-label">变卦</div>
+          <div class="symbols changed" id="result-changed-symbols"></div>
+        </div>
+      </details>
+
+      <button class="btn-primary shine" data-action="resultAgain">再 起 一 卦</button>
+    </section>
+
+    <!-- ========== 历史 ========== -->
+    <section id="page-history" class="page" hidden>
+      <h1 class="title glow-text">历史记录</h1>
+      <div class="empty" id="history-empty" hidden>
+        <div class="muted">还没有起过卦</div>
+        <button class="btn-primary shine" data-action="goCast">去起一卦</button>
+      </div>
+      <div id="history-list"></div>
+      <button class="btn-secondary" id="history-clear-btn" data-action="historyClear" hidden>清空本地历史</button>
+    </section>
+
+    <!-- ========== 榜单 ========== -->
+    <section id="page-leaderboard" class="page" hidden>
+      <h1 class="title glow-text">热门卦象</h1>
+      <div class="subtitle">基于本机的起卦统计（云端榜单尚未接入）</div>
+      <div class="muted center" id="leaderboard-loading">加载中…</div>
+      <div class="card glass placeholder" id="leaderboard-fallback" hidden>
+        <div class="label">榜单暂不可用</div>
+        <div class="muted">起一卦后再来看榜单。</div>
+      </div>
+      <div class="muted center" id="leaderboard-empty" hidden>暂无数据</div>
+      <div id="leaderboard-list"></div>
+    </section>
+
+  </main>
+
+  <nav id="tabbar">
+    <a href="#/" class="tab" data-nav="0">首页</a>
+    <a href="#cast" class="tab" data-nav="1">起卦</a>
+    <a href="#history" class="tab" data-nav="2">历史</a>
+    <a href="#leaderboard" class="tab" data-nav="3">榜单</a>
+  </nav>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

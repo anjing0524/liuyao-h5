@@ -1,0 +1,9 @@
+node_modules/
+dist/
+.DS_Store
+*.log
+.idea/
+.vscode/
+
+# Rust 编译产物
+liuyao-core-rs/target/

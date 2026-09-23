@@ -1,0 +1,12 @@
+# Rust 构建产物
+target/
+
+# IDE
+.idea/
+.vscode/
+
+# macOS
+.DS_Store
+
+# wasm-pack 临时文件
+Cargo.lock.bak

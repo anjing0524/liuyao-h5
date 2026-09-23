@@ -1,0 +1,20 @@
+{
+  "name": "liuyao-h5",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview --port 4173",
+    "wasm:build": "cd liuyao-core-rs && wasm-pack build --target web --out-dir ../src/wasm --release"
+  },
+  "devDependencies": {
+    "sharp": "^0.35.4",
+    "vite": "^8.3.0"
+  },
+  "dependencies": {
+    "gsap": "^3.15.0",
+    "pixi.js": "^8.21.0"
+  }
+}
