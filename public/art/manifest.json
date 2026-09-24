@@ -5,19 +5,19 @@
       "assets": [
         {
           "alias": "landscape",
-          "src": "./art/background-v2.png"
+          "src": "./art/background-v2.webp"
         },
         {
           "alias": "sceneAtlas",
-          "src": "./art/scene-atlas-v2.png"
+          "src": "./art/scene-atlas-v2.webp"
         },
         {
           "alias": "traveler",
-          "src": "./art/traveler-v2.png"
+          "src": "./art/traveler-v2.webp"
         },
         {
           "alias": "effectsAtlas",
-          "src": "./art/effects-atlas.png"
+          "src": "./art/effects-atlas.webp"
         }
       ]
     }

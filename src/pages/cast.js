@@ -1,8 +1,12 @@
 import { MoonScene } from "../moon/MoonScene.js";
+import { loadArt } from "../moon/art.js";
 import { AudioSystem } from "../divination/AudioSystem.js";
 import { ensureReady, rollOneLine, installOnly } from "../utils/wasm-loader.js";
 import { get, set, KEY_CURRENT_QUESTION, KEY_LAST } from "../utils/storage.js";
 import { renderLines, lineName, positions } from "../utils/view.js";
+export function prepareCast() {
+  return Promise.all([ensureReady(), loadArt()]);
+}
 export async function mountCast({ signal }) {
   const question = get(KEY_CURRENT_QUESTION);
   if (!question?.question) {
@@ -18,7 +22,8 @@ export async function mountCast({ signal }) {
     ready = false,
     lastCount = 0;
   const castAtMs = Date.now(),
-    id = globalThis.crypto?.randomUUID?.() ?? `${castAtMs}-${performance.now()}`;
+    id =
+      globalThis.crypto?.randomUUID?.() ?? `${castAtMs}-${performance.now()}`;
   const messages = {
     loading: "静候月色",
     ready: "心有所问，轻叩此间",

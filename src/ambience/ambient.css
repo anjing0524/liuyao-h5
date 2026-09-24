@@ -204,7 +204,7 @@ textarea:focus {
 .ambient-landscape {
   position: absolute;
   inset: -3%;
-  background: url("/art/background-v2.png") center 46% / cover;
+  background: url("/art/background-v2.webp") center 46% / cover;
   opacity: 0.43;
   filter: saturate(0.62);
   transform: scale(1.03);

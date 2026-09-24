@@ -5,6 +5,7 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "assets:optimize": "node scripts/optimize-art.mjs",
     "build": "vite build",
     "preview": "vite preview --port 4173",
     "wasm:build": "cd liuyao-core-rs && wasm-pack build --target web --out-dir ../src/wasm --release",

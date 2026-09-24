@@ -851,7 +851,7 @@ body[data-page="cast"] > .site-header {
 .home-art {
   background-image:
     linear-gradient(90deg, #0b211efa 0%, #0b211e66 65%, #0b211e55),
-    url("/art/background-v2.png");
+    url("/art/background-v2.webp");
   background-position:
     center,
     75% 45%;
